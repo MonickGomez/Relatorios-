@@ -1155,7 +1155,7 @@
             const name = document.getElementById('item-name').value;
             const tags = document.getElementById('item-tags').value;
             const status = document.getElementById('item-status').value;
-            const deployType = status === 'Produção' ? document.getElementById('deploy-type').value : undefined;
+            const deployType = document.getElementById('deploy-type').value;
 
             addItem(name, tags, status, deployType);
 
@@ -1175,5 +1175,6 @@
     </script>
 </body>
 </html>
+
 
 
