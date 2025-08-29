@@ -94,6 +94,14 @@
                                 <option value="Refinamento">Refinamento</option>
                             </select>
                         </div>
+                         <div id="deploy-type-container">
+                            <label for="deploy-type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Deploy</label>
+                            <select id="deploy-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="sem deploy">sem deploy</option>
+                                <option value="release">release</option>
+                                <option value="hotfix">hotfix</option>
+                            </select>
+                        </div>
                         <div class="col-span-1 md:col-span-2 lg:col-span-4 flex justify-between items-center gap-2">
                             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
                                 Adicionar Item
@@ -216,8 +224,29 @@
                             </div>
                             <canvas id="total-items-chart"></canvas>
                         </div>
+                        <!-- Novo Gráfico: Tipos de Deploy em Produção -->
+                        <div class="chart-container">
+                            <div class="flex flex-col mb-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-lg font-medium text-gray-800">Tipos de Deploy em Produção</h3>
+                                    <button onclick="exportChartToPdf('deploy-type-chart')" class="export-button">
+                                        Exportar PDF
+                                    </button>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">Distribuição de itens em status de Produção por tipo de deploy.</p>
+                            </div>
+                            <canvas id="deploy-type-chart"></canvas>
+                        </div>
                     </div>
                 </section>
+                
+                <!-- Novo botão para a apresentação -->
+                <div class="flex justify-center mt-8">
+                    <a href="apresentacao-downstream.html" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200">
+                        Ver Apresentação
+                    </a>
+                </div>
+
             </div>
 
             <!-- Full List View - Visualização completa de itens por semana -->
@@ -237,35 +266,52 @@
         </main>
     </div>
 
+    <!-- Modal para exibir a lista de itens de deploy -->
+    <div id="deploy-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-800"></h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <ul id="modal-list" class="space-y-2 text-sm text-gray-600 max-h-80 overflow-y-auto">
+                <!-- Lista de itens será inserida aqui -->
+            </ul>
+        </div>
+    </div>
+
     <script>
         // Data model and state management
         // Dados pré-carregados com base na sua solicitação
         let sprintItems = [
-            { id: crypto.randomUUID(), name: 'Retirar 2 resultados de NPS erroneos', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T10:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Bug na sincronização de telefones da meta', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T11:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Mensagens de disparos para clientes inadimplentes', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T12:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Instabilidade PA', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T13:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Remover envios testes', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T14:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Atualizar a data do pós atendimentotask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T15:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Conflito no envio da mensagem', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T16:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Erro no analisador de chamados', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T17:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Criar opção de selecionar campo de contato no integrador do Voalle', tags: ['feature'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T09:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Configuração do domíniotask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T10:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Alterar tempo de envio', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T11:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Alterar tempo de envio NPS', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T12:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Ajuste da pergunta de resolutividade', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T13:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Adicionar coringa para o número do lead', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T14:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Planilha de não enviadas', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T15:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Problema no menu de envio do PA', tags: ['bug'], status: 'Pronto pra produção', statusHistory: [{ status: 'Pronto pra produção', timestamp: new Date('2025-08-27T09:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Ajuste nos modelos de resposta automática da Meta', tags: ['bug'], status: 'Teste cruzado', statusHistory: [{ status: 'Teste cruzado', timestamp: new Date('2025-08-27T10:00:00Z') }] },
+            { id: crypto.randomUUID(), name: 'Retirar 2 resultados de NPS erroneos', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T10:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Bug na sincronização de telefones da meta', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T11:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Mensagens de disparos para clientes inadimplentes', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T12:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Instabilidade PA', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T13:00:00Z') }], deployType: 'sem deploy' },
+            { id: crypto.randomUUID(), name: 'Remover envios testes', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T14:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Atualizar a data do pós atendimentotask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T15:00:00Z') }], deployType: 'sem deploy' },
+            { id: crypto.randomUUID(), name: 'Conflito no envio da mensagembug', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T16:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Erro no analisador de chamados', tags: ['bug'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-25T17:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Criar opção de selecionar campo de contato no integrador do Voalle', tags: ['feature'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T09:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Configuração do domíniotask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T10:00:00Z') }], deployType: 'release' },
+            { id: crypto.randomUUID(), name: 'Alterar tempo de envio', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T11:00:00Z') }], deployType: 'sem deploy' },
+            { id: crypto.randomUUID(), name: 'Alterar tempo de envio NPStask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T12:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Ajuste da pergunta de resolutividadetask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T13:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Adicionar coringa para o número do leadtask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T14:00:00Z') }], deployType: 'hotfix' },
+            { id: crypto.randomUUID(), name: 'Planilha de não enviadastask', tags: ['task'], status: 'Produção', statusHistory: [{ status: 'Produção', timestamp: new Date('2025-08-26T15:00:00Z') }], deployType: 'release' },
+            { id: crypto.randomUUID(), name: 'Problema no menu de envio do PAbug', tags: ['bug'], status: 'Pronto pra produção', statusHistory: [{ status: 'Pronto pra produção', timestamp: new Date('2025-08-27T09:00:00Z') }] },
+            { id: crypto.randomUUID(), name: 'BUG- Ajuste nos modelos de resposta automática da Metabug', tags: ['bug'], status: 'Teste cruzado', statusHistory: [{ status: 'Teste cruzado', timestamp: new Date('2025-08-27T10:00:00Z') }] },
             { id: crypto.randomUUID(), name: 'Inserir script da ferramenta de pop-up na plataforma', tags: ['task'], status: 'Teste cruzado', statusHistory: [{ status: 'Teste cruzado', timestamp: new Date('2025-08-27T11:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Adicionar botão de verificar número', tags: ['task'], status: 'Teste cruzado', statusHistory: [{ status: 'Teste cruzado', timestamp: new Date('2025-08-27T12:00:00Z') }] },
+            { id: crypto.randomUUID(), name: 'Adicionar botão de verificar númerotask', tags: ['task'], status: 'Teste cruzado', statusHistory: [{ status: 'Teste cruzado', timestamp: new Date('2025-08-27T12:00:00Z') }] },
             { id: crypto.randomUUID(), name: 'Landing page - Tela simples de Convite com Formulário', tags: ['feature'], status: 'Desenvolvimento', statusHistory: [{ status: 'Desenvolvimento', timestamp: new Date('2025-08-27T13:00:00Z') }] },
             { id: crypto.randomUUID(), name: 'Landing Page Segmentada com Múltiplas Etapas', tags: ['feature'], status: 'Desenvolvimento', statusHistory: [{ status: 'Desenvolvimento', timestamp: new Date('2025-08-27T14:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'envio NPS', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T09:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Edição de nota para pesquisa sem resolutividade', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T10:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Relatórios de pesquisas personalizadas', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T11:00:00Z') }] },
-            { id: crypto.randomUUID(), name: 'Ativar conexa no Zapisp', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T12:00:00Z') }] }
+            { id: crypto.randomUUID(), name: 'envio NPSTask', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T09:00:00Z') }] },
+            { id: crypto.randomUUID(), name: 'Edição de nota para pesquisa sem resolutividadetask', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T10:00:00Z') }] },
+            { id: crypto.randomUUID(), name: 'Relatórios de pesquisas personalizadasTask', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T11:00:00Z') }] },
+            { id: crypto.randomUUID(), name: 'Ativar conexa no Zapisptask', tags: ['task'], status: 'Refinamento', statusHistory: [{ status: 'Refinamento', timestamp: new Date('2025-08-28T12:00:00Z') }] }
         ];
 
         let currentView = 'main'; // 'main' or 'fullList'
@@ -275,6 +321,7 @@
         let itemTypeChartInstance;
         let statusByTypeChartInstance;
         let totalItemsChartInstance;
+        let deployTypeChartInstance;
 
         // Register the datalabels plugin
         Chart.register(ChartDataLabels);
@@ -296,15 +343,26 @@
         function saveData() {
             localStorage.setItem('sprintData', JSON.stringify(sprintItems));
         }
+        
+        // Exibe ou esconde o seletor de tipo de deploy
+        document.getElementById('item-status').addEventListener('change', function() {
+            const deployTypeContainer = document.getElementById('deploy-type-container');
+            if (this.value === 'Produção') {
+                deployTypeContainer.style.display = 'block';
+            } else {
+                deployTypeContainer.style.display = 'none';
+            }
+        });
 
         // Function to add a new sprint item
-        function addItem(name, tags, status) {
+        function addItem(name, tags, status, deployType) {
             const newItem = {
                 id: crypto.randomUUID(),
                 name: name,
                 tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
                 status: status,
                 statusHistory: [{ status: status, timestamp: new Date() }],
+                deployType: status === 'Produção' ? deployType : undefined
             };
             sprintItems.push(newItem);
             saveData();
@@ -518,9 +576,9 @@
             const backgroundColors = labels.map(status => {
                 switch(status) {
                     case 'To Do': return '#60A5FA'; // blue
-                    case 'Em Progresso': return '#FACC15'; // yellow
-                    case 'Em Revisão': return '#A78BFA'; // purple
-                    case 'Concluído': return '#4ADE80'; // green
+                    case 'In Progress': return '#FACC15'; // yellow
+                    case 'Review': return '#A78BFA'; // purple
+                    case 'Done': return '#4ADE80'; // green
                     case 'Produção': return '#A5B4FC'; // light purple
                     case 'Pronto pra produção': return '#FCA5A5'; // light red
                     case 'Teste cruzado': return '#6EE7B7'; // mint green
@@ -804,6 +862,87 @@
                 }
             });
         }
+
+        // Function to create the Deploy Type Chart
+        function createDeployTypeChart() {
+            if (deployTypeChartInstance) {
+                deployTypeChartInstance.destroy();
+            }
+
+            const productionItems = sprintItems.filter(item => item.status === 'Produção');
+            const deployCounts = productionItems.reduce((acc, item) => {
+                const deployType = item.deployType || 'sem deploy';
+                acc[deployType] = (acc[deployType] || 0) + 1;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(deployCounts);
+            const data = Object.values(deployCounts);
+
+            const backgroundColors = labels.map((type) => {
+                switch(type) {
+                    case 'hotfix': return '#EF4444';
+                    case 'release': return '#3B82F6';
+                    case 'sem deploy': return '#9CA3AF';
+                    default: return '#D1D5DB';
+                }
+            });
+
+            const ctx = document.getElementById('deploy-type-chart').getContext('2d');
+            deployTypeChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tipos de Deploy',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        hoverOffset: 4,
+                        datalabels: {
+                            color: '#fff',
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.data.datasets[0].data.reduce((sum, val) => sum + val, 0);
+                                const percentage = ((value / total) * 100).toFixed(0);
+                                return `${value} (${percentage}%)`;
+                            }
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed;
+                                    }
+                                    const total = context.dataset.data.reduce((sum, current) => sum + current, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(2);
+                                    label += ` (${percentage}%)`;
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const deployType = labels[index];
+                            showDeployItemsModal(deployType);
+                        }
+                    }
+                }
+            });
+        }
         
         // Função para renderizar a tabela na visualização principal (limitada a 3 itens)
         function renderMainTable() {
@@ -929,6 +1068,53 @@
             }
         }
 
+        // Função para exibir o modal com a lista de itens
+        function showDeployItemsModal(deployType) {
+            const modal = document.getElementById('deploy-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalList = document.getElementById('modal-list');
+
+            modalTitle.innerText = `Itens com deploy: ${deployType}`;
+            modalList.innerHTML = '';
+
+            const items = sprintItems.filter(item => (item.status === 'Produção' && item.deployType === deployType));
+            
+            if (items.length > 0) {
+                items.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'border-b border-gray-200 py-2 flex justify-between items-center';
+                    
+                    const itemName = document.createElement('span');
+                    itemName.innerText = item.name;
+                    listItem.appendChild(itemName);
+
+                    const itemTags = document.createElement('div');
+                    item.tags.forEach(tag => {
+                        const tagSpan = document.createElement('span');
+                        tagSpan.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 ml-1';
+                        tagSpan.innerText = tag;
+                        itemTags.appendChild(tagSpan);
+                    });
+                    listItem.appendChild(itemTags);
+                    
+                    modalList.appendChild(listItem);
+                });
+            } else {
+                const listItem = document.createElement('li');
+                listItem.className = 'text-center text-gray-400 py-4';
+                listItem.innerText = 'Nenhum item encontrado.';
+                modalList.appendChild(listItem);
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        // Função para fechar o modal
+        function closeModal() {
+            const modal = document.getElementById('deploy-modal');
+            modal.style.display = 'none';
+        }
+
         // Function to export a single chart to PDF
         function exportChartToPdf(canvasId) {
             const chartCanvas = document.getElementById(canvasId);
@@ -960,6 +1146,7 @@
             createItemTypeChart();
             createStatusByTypeChart();
             createTotalItemsChart();
+            createDeployTypeChart();
         }
 
         // Event listener for form submission
@@ -968,8 +1155,9 @@
             const name = document.getElementById('item-name').value;
             const tags = document.getElementById('item-tags').value;
             const status = document.getElementById('item-status').value;
+            const deployType = status === 'Produção' ? document.getElementById('deploy-type').value : undefined;
 
-            addItem(name, tags, status);
+            addItem(name, tags, status, deployType);
 
             // Reseta o formulário
             this.reset();
@@ -987,4 +1175,5 @@
     </script>
 </body>
 </html>
+
 
